@@ -30,3 +30,18 @@
 *.exe
 *.out
 *.app
+
+# CMake byproducts
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeScripts/
+CTestTestfile.cmake
+install_manifest.txt
+
+# vs code
+.vscode
+.cache
+
+**/compile_commands.json
