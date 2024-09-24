@@ -1,31 +1,38 @@
 #include "json_parser.h"
+#include <cassert>
 #include <stdexcept>
-#include <cmath>
 
-JsonValue JsonParser::Parse(std::ifstream& file) {
+int JsonValue::s_LogDepth = 0;
+
+
+std::shared_ptr<JsonValue> JsonParser::Parse(std::ifstream& file) {
+    nextCharSkipWS(file);
+
+    if (_ch != '{') {
+        throwRuntimeError("The root of JSON file must be an object");
+    }
+
     return parseValue(file);
 }
 
-JsonValue JsonParser::parseValue(std::ifstream& file) {
-    nextCharSkipWS(file);
-
+std::shared_ptr<JsonValue> JsonParser::parseValue(std::ifstream& file) {
     switch (_ch) {
         case '{':
-            return JsonValue(parseObject(file));
+            return std::make_shared<JsonObject>(parseObject(file));
         case '[':
-            return JsonValue(parseArray(file));
+            return std::make_shared<JsonArray>(parseArray(file));
         case '"':
-            return JsonValue(parseString(file));
+            return std::make_shared<JsonString>(parseString(file));
         case 't':
         case 'f':
-            return JsonValue(parseBoolean(file));
+            return std::make_shared<JsonBoolean>(parseBoolean(file));
             break;
         case 'n': 
-            return JsonValue(parseNull(file));
+            return std::make_shared<JsonNull>(parseNull(file));
             break;
     }
 
-    return JsonValue(parseNumber(file));
+    return std::make_shared<JsonNumber>(parseNumber(file));
 }
 
 JsonObject JsonParser::parseObject(std::ifstream& file) {
@@ -44,11 +51,13 @@ JsonObject JsonParser::parseObject(std::ifstream& file) {
         }
         nextCharSkipWS(file);
         auto value = parseValue(file);
-        obj[key] = std::make_shared<JsonValue>(value);
+
+        if (!key.empty()) {
+            obj.add(key, value);
+        }
+
         nextCharSkipWS(file);
-        if (_ch == ',') {
-            nextCharSkipWS(file);
-        } else if (_ch != '}') {
+        if (_ch != ',' && _ch != '}') {
             throwRuntimeError("Missing comma between members");
         }
     }
@@ -60,11 +69,10 @@ JsonArray JsonParser::parseArray(std::ifstream& file) {
     JsonArray arr;
     
     while (_ch != ']') {
-        arr.push_back(std::make_shared<JsonValue>(parseValue(file)));
         nextCharSkipWS(file);
-        if (_ch == ',') {
-            nextCharSkipWS(file);   
-        } else if (_ch != ']') {
+        arr.add(parseValue(file));
+        nextCharSkipWS(file);
+        if (_ch != ',' && _ch != ']') {
             throwRuntimeError("Missing comma between elements");
         }
     }
@@ -112,6 +120,8 @@ JsonNumber JsonParser::parseNumber(std::ifstream& file) {
 
     // Convert the parsed string to a number
     try {
+        returnChar(file);
+
         return std::stod(numberStr);
     } catch (const std::invalid_argument& e) {
         throwRuntimeError("Invalid number format");
@@ -149,17 +159,17 @@ JsonNull JsonParser::parseNull(std::ifstream& file) {
         nextChar(file);
     }
 
-    return nullptr;
+    return JsonNull();
 }
 
 
 JsonString JsonParser::parseString(std::ifstream& file) {
     
     if (_ch != '"') {
-        // Error: string must start with double-quotes
+        throwRuntimeError("String must start with \" sign");
     }
 
-    JsonString str = "";
+    JsonString str;
 
     int state = 0; // 2 - escape, 3 - unicode, -1 - done
 
@@ -230,7 +240,7 @@ JsonString JsonParser::parseString(std::ifstream& file) {
                 break;
             case 3: // unicode mode
                 if (!std::isxdigit(_ch)) {
-                    // Error: invalid unicode format
+                    throwRuntimeError(std::string("Invalid unicode hex digit \'") + _ch + "\'");
                 }
                 unicode_hex_string += _ch;
 
@@ -250,7 +260,7 @@ JsonString JsonParser::parseString(std::ifstream& file) {
                 
                 break;
             default:
-                // What?
+                assert(false); // should never happen
                 break;
         }
     }

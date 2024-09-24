@@ -1,11 +1,11 @@
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 
 #include "json_parser.h"
 
 int main(int argc, char* argv[]) {
-    
     std::cout << "Running...\n";
 
     if (argc != 3) {
@@ -38,16 +38,30 @@ int main(int argc, char* argv[]) {
 
     JsonParser parser;
 
+    std::shared_ptr<JsonValue> root;
+
     try {
-        parser.Parse(json_file);
+        root = parser.Parse(json_file);
         std::cout << "[JSON parser] success." << std::endl;
     } catch (const std::runtime_error& e) {
         std::cerr << "[JSON parser] Runtime error: " << e.what() << std::endl;
+        return 1;
     } catch (const std::exception& e) {
         std::cerr << "[JSON parser] Exception: " << e.what() << std::endl;
+        return 1;
     } catch (...) {
         std::cerr << "[JSON parser] An unknown error occurred." << std::endl;
+        return 1;
     }
+
+    // Check if root is a JsonObject
+    std::shared_ptr<JsonObject> jsonObject = std::dynamic_pointer_cast<JsonObject>(root);
+    if (!jsonObject) {
+        std::cerr << "[JSON parser] Root is not a JsonObject." << std::endl;
+        return 1;
+    }
+
+    std::cout << *jsonObject;
 
     return 0;
 }

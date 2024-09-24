@@ -2,38 +2,16 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
-#include <unordered_map>
-#include <variant>
-#include <memory>
 #include <assert.h>
 
-class JsonValue;
-
-using JsonObject = std::unordered_map<std::string, std::shared_ptr<JsonValue>>;
-using JsonArray = std::vector<std::shared_ptr<JsonValue>>;
-using JsonString = std::string;
-using JsonNumber = double;
-using JsonBoolean = bool;
-using JsonNull = std::nullptr_t;
-
-
-class JsonValue {
-public:
-    using ValueType = std::variant<JsonObject, JsonArray, JsonString, JsonNumber, JsonBoolean, JsonNull>;
-
-    JsonValue() : value(nullptr) {}
-    JsonValue(ValueType v) : value(v) {}
-
-    ValueType value;
-};
+#include "json_types.h"
 
 class JsonParser {
 public:
-    JsonValue Parse(std::ifstream& file);
+    std::shared_ptr<JsonValue> Parse(std::ifstream& file);
 
 private:
-    JsonValue parseValue(std::ifstream& file);
+    std::shared_ptr<JsonValue> parseValue(std::ifstream& file);
 
     JsonObject parseObject(std::ifstream& file);
 
@@ -74,6 +52,18 @@ private:
         do {
             nextChar(file);
         } while (std::isspace(_ch));
+    }
+
+    inline void returnChar(std::ifstream& file) {
+        file.putback(_ch);
+
+        if (_ch == '\n') {
+            _line--;
+            // Assuming previous line length is unknown, reset _column
+            _column = 0;
+        } else {
+            _column--;
+        }
     }
 
     char _ch;

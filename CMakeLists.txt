@@ -19,4 +19,4 @@ set(CMAKE_CXX_COMPILER "g++")
 
 set(CMAKE_BUILD_TYPE Debug)
 
-add_executable(json_eval main.cpp json_parser.h json_parser.cpp)
+add_executable(json_eval main.cpp json_types.h json_parser.h json_parser.cpp)
