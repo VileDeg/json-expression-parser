@@ -45,3 +45,29 @@ install_manifest.txt
 .cache
 
 **/compile_commands.json
+
+# VS
+*.sln
+*.vcxproj
+*.filters
+
+*.dir/
+
+*.pdb
+
+Debug/
+
+# ninja
+.ninja
+.ninja_deps
+.ninja_log
+
+x64/
+lib
+
+
+
+_deps/
+bin/
+
+build/

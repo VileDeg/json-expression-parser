@@ -6,29 +6,39 @@
 #include "json_parser.h"
 
 int main(int argc, char* argv[]) {
-    std::cout << "Running...\n";
+    
+    int base_arg_num = 3;
+    int max_args = 4;
 
-    if (argc != 3) {
+    bool verbose = false;
+
+    if (argc != base_arg_num) {
         std::cerr << "Usage: " << argv[0] << " <json_file> <expression>" << std::endl;
         return 1;
     }
 
-    {
-        std::ifstream json_file(argv[1]);
-        if (!json_file.is_open()) {
-            std::cerr << "Error: Could not open file " << argv[1] << std::endl;
-            return 1;
+    for (int i = base_arg_num - 1; i < max_args - 1; ++i) {
+        char* carg = argv[i];
+        char ch0 = carg[0];
+
+        if (strlen(carg) < 1) {
+            continue;
         }
 
-        
-        std::stringstream buffer;
-        buffer << json_file.rdbuf();
-        std::string json_content = buffer.str();
-        std::cout << "JSON Content:\n" << json_content << std::endl;
+        //char ch1 = carg[1];
 
-        json_file.close();
-
+        if (ch0 == '-') {
+            std::string arg_substr = std::string(carg).substr(1); // Get substring starting from the second letter
+            if (arg_substr == "v" || arg_substr == "-verbose") {
+                verbose = true;
+            }
+        }
     }
+
+    if (argc > 3 && std::string(argv[3]) == "-v") { // verbose
+        std::cout << "Running...\n";
+    }
+    
 
     std::ifstream json_file(argv[1]);
     if (!json_file.is_open()) {
@@ -36,13 +46,29 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    JsonParser parser;
+    if (verbose) {
+        std::ifstream json_file(argv[1]);
+        if (!json_file.is_open()) {
+            std::cerr << "Error: Could not open file " << argv[1] << std::endl;
+            return 1;
+        }
+        std::stringstream buffer;
+        buffer << json_file.rdbuf();
+        std::string json_content = buffer.str();
+        std::cout << "JSON Content:\n" << json_content << std::endl;
+
+        json_file.close();
+    }
+
+    JsonParser parser(verbose);
 
     std::shared_ptr<JsonValue> root;
 
     try {
         root = parser.Parse(json_file);
-        std::cout << "[JSON parser] success." << std::endl;
+        if (verbose) {
+            std::cout << "[JSON parser] success." << std::endl;
+        }
     } catch (const std::runtime_error& e) {
         std::cerr << "[JSON parser] Runtime error: " << e.what() << std::endl;
         return 1;
@@ -116,11 +142,18 @@ Feel free to implement any suitable interface for the application.
 Requirements:
 
     The implementation should be as fast as possible.
-    Implement reasonable error reporting. For example, if the JSON doesn't have a required field, the application should report an error. If the JSON is invalid, the library should report that as well. Note that the expression can also be invalid.
+    Implement reasonable error reporting. For example, 
+    if the JSON doesn't have a required field, 
+    the application should report an error. 
+    If the JSON is invalid, the library should report that as well. 
+    Note that the expression can also be invalid.
+
     Add automated tests.
     Use any modern C++ standard: C++11, C++14, C++17, or C++20.
     You may use any functions from the C++ standard library.
-    It is allowed to use a third-party library only for writing unit tests, such as GTest or Catch2, etc. It is forbidden to use third-party libraries for any other purposes, such as parsing JSON.
+    It is allowed to use a third-party library only for writing unit tests, 
+    such as GTest or Catch2, etc. 
+    It is forbidden to use third-party libraries for any other purposes, such as parsing JSON.
     Include a clear README with instructions on how to build the application.
 
 Optional:

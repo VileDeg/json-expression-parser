@@ -8,6 +8,11 @@
 
 class JsonParser {
 public:
+    JsonParser() = default;
+
+    JsonParser(bool verbose) 
+        : _verbose(verbose) {}
+
     std::shared_ptr<JsonValue> Parse(std::ifstream& file);
 
 private:
@@ -70,4 +75,6 @@ private:
 
     int _line = 1;
     int _column = 0;
+
+    bool _verbose = false;
 };
