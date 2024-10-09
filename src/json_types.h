@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -5,6 +7,7 @@
 #include <memory>
 #include <assert.h>
 
+// #define JSON_VALUE_PRINT_NL
 
 class JsonValue {
 public:
@@ -15,7 +18,8 @@ public:
 
 protected:
     static int s_LogDepth;
-    
+
+#ifdef JSON_VALUE_PRINT_NL    
     static inline std::string NLSep() {
         std::string nl_sep = "\n";
         for (int i = 0; i < s_LogDepth; ++i) {
@@ -23,15 +27,20 @@ protected:
         }
         return nl_sep;
     }
+#else
+    static inline std::string NLSep() {
+        std::string nl_sep = " ";
+        return nl_sep;
+    }
+#endif
 
+    friend inline std::ostream& operator<<(std::ostream& os, const JsonValue& value) {
+        value.print(os);
+        return os;
+    }
 };
 
-
-inline std::ostream& operator<<(std::ostream& os, const JsonValue& value) {
-    value.print(os);
-    return os;
-}
-
+class JsonString;
 
 
 class JsonObject : public JsonValue {
@@ -64,7 +73,14 @@ public:
             if (it != _map.begin()) {
                 os << "," << NLSep();
             }
-            os << "\"" << it->first << "\": " << *(it->second);
+            os << "\"" << it->first << "\": ";
+
+            std::shared_ptr<JsonString> strPtr = std::dynamic_pointer_cast<JsonString>(it->second);
+            if (strPtr) { // if is string enclose in double quotes
+                os << "\"" << *(it->second) << "\"";
+            } else {
+                os << *(it->second);
+            }
         }
         --s_LogDepth;
         os << NLSep() << "}";
@@ -73,6 +89,7 @@ public:
 private:
     std::unordered_map<std::string, std::shared_ptr<JsonValue>> _map;
 };
+
 
 class JsonArray : public JsonValue {
 public:
@@ -105,7 +122,14 @@ public:
             if (i > 0) {
                 os << "," << NLSep();
             }
-            os << *(_array[i]);
+
+            std::shared_ptr<JsonString> strPtr = std::dynamic_pointer_cast<JsonString>(_array[i]);
+            if (strPtr) { // if is string enclose in double quotes
+                os << "\"" << *(_array[i]) << "\"";
+            } else {
+                os << *(_array[i]);
+            }
+            
         }
         --s_LogDepth;
         os << NLSep() << "]";
@@ -146,7 +170,7 @@ public:
 
 
     void print(std::ostream& os) const override {
-        os << "\"" << _value << "\"";
+        os << _value;
     }
 
     bool empty() {
@@ -164,13 +188,34 @@ private:
 
 class JsonNumber : public JsonValue {
 public:
-    JsonNumber(double value) : _value(value) {}
+    JsonNumber(int value) 
+        : _value(value), _isInteger(true) {}
+
+    JsonNumber(float value) 
+        : _value(value), _isInteger(false) {}
+
+    JsonNumber(double value) 
+        : _value(value), _isInteger(false) {}
 
     void print(std::ostream& os) const override {
-        os << _value;
+        if (_isInteger) {
+            os << int(_value);
+        } else {
+            os << _value;
+        }
+    }
+
+    bool isInteger() {
+        return _isInteger;
+    }
+
+    operator int() const {
+        return _value;
     }
 
 private:
+    bool _isInteger;
+
     double _value;
 };
 

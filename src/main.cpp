@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "json_parser.h"
+#include "json_eval.h"
 
 int main(int argc, char* argv[]) {
     
@@ -24,8 +25,6 @@ int main(int argc, char* argv[]) {
         if (strlen(carg) < 1) {
             continue;
         }
-
-        //char ch1 = carg[1];
 
         if (ch0 == '-') {
             std::string arg_substr = std::string(carg).substr(1); // Get substring starting from the second letter
@@ -80,14 +79,37 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Check if root is a JsonObject
-    std::shared_ptr<JsonObject> jsonObject = std::dynamic_pointer_cast<JsonObject>(root);
-    if (!jsonObject) {
-        std::cerr << "[JSON parser] Root is not a JsonObject." << std::endl;
+    if (verbose) {
+        std::cout << *root << std::endl;
+    }
+    
+
+    JsonEval evaluator(root);
+
+    std::shared_ptr<JsonValue> expressionResult{};
+
+    std::string expr = argv[2];
+
+    std::erase(expr, '"');
+
+    try {
+        expressionResult = evaluator.EvaluateExpression(root, expr);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "[JSON eval] Runtime error: " << e.what() << std::endl;
+        return 1;
+    } catch (const std::exception& e) {
+        std::cerr << "[JSON eval] Exception: " << e.what() << std::endl;
+        return 1;
+    } catch (...) {
+        std::cerr << "[JSON eval] An unknown error occurred." << std::endl;
         return 1;
     }
 
-    std::cout << *jsonObject;
+    if (verbose) {
+        std::cout << "EXPRESSION RESULT:\n";
+    }
+
+    std::cout << *expressionResult;
 
     return 0;
 }

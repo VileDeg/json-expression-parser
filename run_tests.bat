@@ -1,2 +1,2 @@
-@REM ctest -C Debug --test-dir build/gtest
+call .\cmconf.bat
 build\gtest\run_tests.exe

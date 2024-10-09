@@ -122,11 +122,17 @@ JsonNumber JsonParser::parseNumber(std::ifstream& file) {
     try {
         returnChar(file);
 
-        return std::stod(numberStr);
-    } catch (const std::invalid_argument& e) {
-        throwRuntimeError("Invalid number format");
-    } catch (const std::out_of_range& e) {
-        throwRuntimeError("Number out of range");
+        double doubleRep = std::stod(numberStr);
+
+        try {
+            int intRep = std::stoi(numberStr);
+            return intRep;
+        } catch(...) {
+            return doubleRep;
+        }
+        
+    } catch (const std::exception& e) {
+        throwRuntimeError(e.what());
     }
 
     throwRuntimeError("Unexpected error in number parsing");

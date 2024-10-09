@@ -8,9 +8,11 @@ set(TEST_DIR .)
 
 set(TEST_SOURCES
     ../${SRC_DIR}/json_parser.cpp
+    ../${SRC_DIR}/json_eval.cpp
 
-    ${TEST_DIR}/parser_test.cpp
     ${TEST_DIR}/gtest_main.cpp
+    ${TEST_DIR}/test_pass.cpp
+    ${TEST_DIR}/test_fail.cpp
 )
 
 set(TEST_TARGET run_tests)
